@@ -1,0 +1,69 @@
+#include<stdio.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netdb.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<strings.h>
+
+void error(char *s)
+{
+	printf("%s\n",s);// printing the error message
+}
+
+int main(int argc, int *argv[])//command line arguments
+{
+	int sock,length,n;//local variables
+	struct sockaddr_in server,from;//local variables
+	struct hostent *hp;//local variables
+	char buffer[256];
+	if(argc!=3)
+//checking if hostname and the port address is provided //
+	{
+		printf("insufficient arguments\n");
+		exit(1);
+	}
+	sock = socket(AF_INET,SOCK_DGRAM,0);//creaing the socket
+
+	if(sock<0)
+	{
+		error("error in opening socket\n");//printing error message
+	}
+	server.sin_family = AF_INET;//specifyig that we are using internet protocol
+	hp= gethostbyname(argv[1]);//geting the local host name or IP addressbthat is passed and storing it
+
+	if(hp==0)
+	{
+		error("Unknown host\n");
+	}
+	bcopy((char*)hp->h_addr,(char *)&server.sin_addr,hp->h_length);//copying the address into the particular variable
+	server.sin_port =  htons(atoi(argv[2]));//getting tghe port number
+	length = sizeof(struct sockaddr_in);//getting the length
+
+	printf("enter the message now\n");//send the message to server
+
+	bzero(buffer,256);//clearing the buffer
+	fgets(buffer,255,stdin);//to get the value in buffer
+
+	n= sendto(sock,buffer,strlen(buffer),0,&server,length);//sending the message
+	if(n<0)
+	{
+		error("error in sendto");
+	}
+	bzero(buffer,256);// clearing the buffer
+	n=recvfrom(sock,buffer,256,0,&from,&length);// receiving the acknowledgement from server
+
+	if(n<0)
+	{
+		error("error in the recvfrom\n");
+	}
+	write(1,"Got an ack saying",18);//displaying the acknowledgement
+	write(1,buffer,n);
+}
+
+//close()api tries to complete the transmission if there is still data waiting to be transmitted //
+	close(sock);
+}
+

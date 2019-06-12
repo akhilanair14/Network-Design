@@ -1,0 +1,60 @@
+#include<stdio.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<netdb.h>
+#include<stdlib.h>
+#include<strings.h>
+#include<unistd.h>
+void error(char *s)        // error method 
+{
+	printf("%s\n",s);
+	exit(0);
+}
+
+int main(int argc, char *argv[]) //command line arguments
+{
+	int sock,length,fromlen,n;  //local variables
+	struct sockaddr_in server;  //local variables
+	struct sockaddr_in from;   //local variables
+	char buf[1024]; // buffer used for sending and recieving the data
+
+	if(argc<2)
+	{
+		fprintf(stderr, "no port number specified\n"); //printing the error
+		exit(0);
+	}
+	sock = socket(AF_INET,SOCK_DGRAM,0);//creating a socket
+	if(sock<0)
+	{
+		error("error in opening socket\n");
+	}
+	length = sizeof(server);//calculating the length
+	bzero(&server,length); //clearing the server
+	server.sin_family= AF_INET;// specifying that we are using internet address
+	server.sin_addr.s_addr = INADDR_ANY;//get the pc address
+	server.sin_port = htons(atoi(argv[1]));//getting the port                                          number in network understandable format and store 
+	
+if(bind(sock,(struct sockaddr*)&server,length)<0)//binding the socket
+	{
+		error("cannot bind\n");
+	}
+	fromlen  =sizeof(struct sockaddr_in);
+
+	while(1)//infinite loop
+	{
+		n = recvfrom(sock,buf,1024,0,(struct sockaddr *)&from,&fromlen);//recieve the information from the client
+		if(n<0)
+		{
+			error("recvfrom  error\n");
+		}
+		write(1,"Datagram received is :",21);//writing and printing the receieved message
+		write(1,buf,n);//copy from buffer
+		n= sendto(sock,"Got your message",17,0,(struct sockaddr*)&from,fromlen);//acknowldgement
+		if(n<0)
+		{
+			error("error in sendto\n");
+		}
+	}
+}
+
